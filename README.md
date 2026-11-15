@@ -472,6 +472,18 @@ A primeira execução foi aprovada no commit `5fdb524`, com duração total de 2
 
 As execuções podem ser acompanhadas na aba **Actions** do repositório.
 
+### Evidências de execução
+
+O projeto possui evidências documentadas de testes automatizados, qualidade de dados e integração contínua.
+
+A execução do GitHub Actions referente ao commit `e1db234` foi concluída com sucesso em 22 segundos.
+
+![GitHub Actions — MiniRetail CI aprovado](docs/evidencias/github-actions-success.png)
+
+**Documentação complementar:** [Evidências técnicas do projeto](docs/evidencias.md).
+
+As evidências demonstram a execução das verificações automatizadas em um ambiente independente do desenvolvimento local.
+
 ## 13. Decisões técnicas e aprendizados
 
 O projeto foi desenvolvido com foco nos fundamentos de Engenharia de Software e Engenharia de Dados.
