@@ -1,0 +1,26 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Ambiente virtual
+.venv/
+
+# Configurações locais
+.env
+.env.*
+!.env.example
+
+# VS Code
+.vscode/
+
+# Dados e relatórios locais
+data/*.csv
+reports/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
