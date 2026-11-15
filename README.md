@@ -2,7 +2,7 @@
 
 **Pipeline ETL com Python, PostgreSQL, SQL, Docker, testes automatizados e GitHub Actions.**
 
-Projeto educacional de Engenharia de Dados que simula o processamento de vendas de uma empresa varejista fictícia, desde a geração dos dados até a disponibilização de indicadores analíticos.
+Projeto de Engenharia de Dados que simula o processamento de vendas de uma empresa varejista fictícia, desde a geração dos dados até a disponibilização de indicadores analíticos.
 
 O objetivo é demonstrar como construir uma solução de dados **reproduzível, testável, documentada e orientada a problemas de negócio**.
 
