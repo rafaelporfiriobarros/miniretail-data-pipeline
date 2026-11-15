@@ -1,0 +1,134 @@
+
+name: MiniRetail CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-tests:
+    name: Ruff + Pytest + PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: miniretail
+      DATABASE_USER: miniretail_app
+      DATABASE_PASSWORD: miniretail_ci_only_2026
+      PGPASSWORD: miniretail_ci_only_2026
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: miniretail
+          POSTGRES_USER: miniretail_app
+          POSTGRES_PASSWORD: miniretail_ci_only_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U miniretail_app -d miniretail"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: Instalar dependencias
+        run: uv sync --frozen --dev
+
+      - name: Verificar Ruff
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Criar banco de testes
+        run: |
+          psql -h "$DATABASE_HOST" \
+            -p "$DATABASE_PORT" \
+            -U "$DATABASE_USER" \
+            -d "$DATABASE_NAME" \
+            -v ON_ERROR_STOP=1 \
+            -c "CREATE DATABASE miniretail_test OWNER miniretail_app;"
+
+      - name: Aplicar schema no banco principal
+        run: |
+          psql -h "$DATABASE_HOST" \
+            -p "$DATABASE_PORT" \
+            -U "$DATABASE_USER" \
+            -d miniretail \
+            -v ON_ERROR_STOP=1 \
+            -1 \
+            -f sql/001_schema.sql
+
+      - name: Aplicar schema no banco de testes
+        run: |
+          psql -h "$DATABASE_HOST" \
+            -p "$DATABASE_PORT" \
+            -U "$DATABASE_USER" \
+            -d miniretail_test \
+            -v ON_ERROR_STOP=1 \
+            -1 \
+            -f sql/001_schema.sql
+
+      - name: Criar views analiticas
+        run: |
+          for database in miniretail miniretail_test; do
+            psql -h "$DATABASE_HOST" \
+              -p "$DATABASE_PORT" \
+              -U "$DATABASE_USER" \
+              -d "$database" \
+              -v ON_ERROR_STOP=1 \
+              -1 \
+              -f sql/analytics.sql
+          done
+
+      - name: Configurar roles de seguranca
+        run: |
+          psql -h "$DATABASE_HOST" \
+            -p "$DATABASE_PORT" \
+            -U "$DATABASE_USER" \
+            -d miniretail_test \
+            -v ON_ERROR_STOP=1 \
+            -1 \
+            -f sql/002_security_roles.sql
+
+      - name: Gerar vendas sinteticas
+        run: uv run python -m miniretail.generate_data
+
+      - name: Executar pipeline ETL
+        run: uv run python -m miniretail.pipeline
+
+      - name: Validar carga inicial
+        run: |
+          result=$(psql -h "$DATABASE_HOST" \
+            -p "$DATABASE_PORT" \
+            -U "$DATABASE_USER" \
+            -d miniretail \
+            -At \
+            -v ON_ERROR_STOP=1 \
+            -c "SELECT COUNT(*) FROM retail.vendas;")
+
+          echo "Vendas carregadas: $result"
+          test "$result" = "1000"
+
+      - name: Executar testes automatizados
+        run: uv run pytest -v -rs

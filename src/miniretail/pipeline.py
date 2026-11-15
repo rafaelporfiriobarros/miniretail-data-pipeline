@@ -24,7 +24,8 @@ def get_pipeline_status() -> str:
 def run_pipeline(
     csv_path: Path,
 ) -> PipelineResult:
-    """Executa extração, transformação e carga."""
+    """Executa extracao, transformacao e carga."""
+
     rows = extract_sales(csv_path)
 
     valid_sales, rejected_sales = transform_sales(rows)
